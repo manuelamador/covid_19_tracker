@@ -1,4 +1,8 @@
 using Dates
+using Literate
+
+const PATH_SRC =  "src"
+const PATH_OUTPUT =  "output"
 
 function replace_date(content)
     content = replace(content, "DATEOFTODAY" => Date(now()))
@@ -11,13 +15,16 @@ function replace_includes(str)
 
     # Here the path loads the files from their proper directory,
     # which may not be the directory of the `examples.jl` file!
-    path = ""
 
     for ex in included
-        content = read(path*ex, String)
+        content = read(joinpath(PATH_SRC, ex), String)
         str = replace(str, "include(\"$(ex)\")" => content)
     end
     return str
 end
 
-Literate.notebook("plots.jl", preprocess= x -> replace_includes(replace_date(x))  )
+Literate.notebook(
+    joinpath(PATH_SRC, "plots.jl"), 
+    joinpath(pwd(), PATH_OUTPUT);
+    preprocess= x -> replace_includes(replace_date(x))
+)
