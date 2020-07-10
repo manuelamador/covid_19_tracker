@@ -4,7 +4,7 @@ using TimeSeries
 using Dates
 using Statistics
 using JSON
-using HTTP: get
+import HTTP
 using Plots, Plots.Measures
 
 const _DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
@@ -23,10 +23,10 @@ end
 
 function download_data()
     df = (
-      global_confirmed = DataFrame!(CSV.File(get(url_header * "time_series_covid19_confirmed_global.csv").body)),
-      global_deaths = DataFrame!(CSV.File(get(url_header * "time_series_covid19_deaths_global.csv").body)),
-      us_deaths = DataFrame!(CSV.File(get(url_header * "time_series_covid19_deaths_US.csv").body)),
-      us_confirmed = DataFrame!(CSV.File(get(url_header * "time_series_covid19_confirmed_US.csv").body))
+      global_confirmed = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_global.csv").body)),
+      global_deaths = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_global.csv").body)),
+      us_deaths = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_US.csv").body)),
+      us_confirmed = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_US.csv").body))
     )
     return df
 end
@@ -35,7 +35,7 @@ end
 function get_iso2(str)
     ## getting ISO2 code from the worldbank
     url = "http://api.worldbank.org/v2/countries/all?per_page=25000&format=json"
-    request = get(url)
+    request = HTTP.get(url)
     out = JSON.parse(String(request.body))
     matches = [(x["iso2Code"], x["name"]) for x in out[2] if occursin(str, x["name"])]
     if length(matches) == 1
@@ -52,7 +52,7 @@ end
 function get_pop(code_iso2; year=2019)
     ## getting country's population from the worldbank
     url = "http://api.worldbank.org/v2/country/" * code_iso2 * "/indicator/SP.POP.TOTL?date=" * string(year) * "&format=json"
-    request = get(url)
+    request = HTTP.get(url)
     out = JSON.parse(String(request.body))
     return out[2][1]["value"]
 end 
