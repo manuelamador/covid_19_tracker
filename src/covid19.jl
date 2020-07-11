@@ -12,7 +12,8 @@ const _DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
 const url_header = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
 
 _WB_ISO2_CODES = Dict(
-    "Korea, South" => "KR"
+    "Korea, South" => "KR",
+    "US" => "US"
 )
 
 

@@ -1,3 +1,9 @@
+# Written in Julia 1.4 
+#
+# Uses Literate.jl to generate the `plots.ipynb` file in `output`
+#
+# 
+
 using Dates
 using Literate
 

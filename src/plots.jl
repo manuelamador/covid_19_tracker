@@ -1,8 +1,8 @@
 # # Covid-19 tracker
 
 # Updated on DATEOFTODAY
-
-# Written in Julia 1.4
+# 
+# Written in Julia 1.4 
 
 # ## Code
 
@@ -38,6 +38,8 @@ plot_county_pc_daily("Middlesex", "Massachusetts", df)
 
 # ## Country plots
 
+plot_country_pc_daily("US", df)
+#-
 plot_country_pc_daily("Dominican Republic", df)
 #-
 plot_country_pc_daily("Ireland", df)
