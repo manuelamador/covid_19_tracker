@@ -108,16 +108,24 @@ function get_country_pc(country, series, df)
 end
 
 
+function add_xticks!(fig)
+    ticks = Date(2020, 03, 1):Month(1):Date(now())
+    labels = monthabbr.(ticks)
+    labels[1] = labels[1] * "\n2020"
+    xticks!(fig, Dates.value.(ticks), labels)
+    return fig
+end
+
+
 function plot_helper(ta)
     fig = plot(ta, ribbon=(0.0 .* values(ta), -values(ta)), linewidth=2, legend=false)
     ta_ma = lead(moving(mean, ta, 7), 3) ## centered moving average 
     plot!(fig, ta_ma, color=:black, linewidth=2, legend=false)
-    return fig 
+    return add_xticks!(fig)
 end
 
 
 my_diff(ts) = max.(diff(ts), 0) ## take first differences and drop negative obs
-
 
 function plot_country_pc_daily(country, df)
     ta = my_diff(get_country_pc(country, :global_deaths, df))
@@ -126,7 +134,7 @@ function plot_country_pc_daily(country, df)
     ylabel!(fig1, "daily per million")
 
     ta = my_diff(get_country_pc(country, :global_confirmed, df))
-    fig2 = plot_helper(ta)
+    fig2 = plot_helper(ta) 
     title!(fig2, country * ", confirmed cases", titlelocation=:left, top_margin=[5mm 0mm])
     ylabel!(fig2, "daily per million")
 
