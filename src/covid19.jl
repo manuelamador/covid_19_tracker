@@ -17,9 +17,7 @@ _WB_ISO2_CODES = Dict(
 )
 
 
-function list_countries(df)
-    return sort(collect(Set(df["global_confirmed"][!, "Country/Region"])))
-end 
+list_countries(df) = sort(collect(Set(df["global_confirmed"][!, "Country/Region"])))
 
 
 function download_data()
@@ -108,7 +106,10 @@ function get_country_pc(country, series, df)
 end
 
 
-function add_xticks!(fig)
+function plot_helper(ta)
+    fig = plot(ta, ribbon=(0.0 .* values(ta), -values(ta)), linewidth=2, legend=false)
+    ta_ma = lead(moving(mean, ta, 7), 3) ## centered moving average 
+    plot!(fig, ta_ma, color=:black, linewidth=2, legend=false)
     ticks = Date(2020, 03, 1):Month(1):Date(now())
     labels = monthabbr.(ticks)
     labels[1] = labels[1] * "\n2020"
@@ -117,56 +118,44 @@ function add_xticks!(fig)
 end
 
 
-function plot_helper(ta)
-    fig = plot(ta, ribbon=(0.0 .* values(ta), -values(ta)), linewidth=2, legend=false)
-    ta_ma = lead(moving(mean, ta, 7), 3) ## centered moving average 
-    plot!(fig, ta_ma, color=:black, linewidth=2, legend=false)
-    return add_xticks!(fig)
-end
-
-
 my_diff(ts) = max.(diff(ts), 0) ## take first differences and drop negative obs
 
-function plot_country_pc_daily(country, df)
-    ta = my_diff(get_country_pc(country, :global_deaths, df))
-    fig1 = plot_helper(ta)
-    title!(fig1, country * ", deaths", titlelocation=:left, top_margin=[5mm 0mm])
+
+function make_daily_plot(ts_deaths, ts_confirmed, title)
+    fig1 = plot_helper(my_diff(ts_deaths))
+    title!(fig1, title * ", deaths", titlelocation=:left, top_margin=[5mm 0mm])
     ylabel!(fig1, "daily per million")
 
-    ta = my_diff(get_country_pc(country, :global_confirmed, df))
-    fig2 = plot_helper(ta) 
-    title!(fig2, country * ", confirmed cases", titlelocation=:left, top_margin=[5mm 0mm])
+    fig2 = plot_helper(my_diff(ts_confirmed))
+    title!(fig2, title * ", confirmed cases", titlelocation=:left, top_margin=[5mm 0mm])
     ylabel!(fig2, "daily per million")
 
-    plot(fig1, fig2, size=(900, 300), layout=2)
+    return plot(fig1, fig2, size=(900, 300), layout=2)
+end 
+
+
+function plot_country_pc_daily(country, df)
+    return make_daily_plot(
+        get_country_pc(country, :global_deaths, df),
+        get_country_pc(country, :global_confirmed, df),
+        country
+    )
 end 
 
 
 function plot_county_pc_daily(county, state, df)
-    ta = my_diff(get_county_pc(county, state, :us_deaths, df))
-    fig1 = plot_helper(ta)
-    title!(fig1, county * ", " * state * ", deaths", titlelocation=:left, top_margin=[5mm 0mm])
-    ylabel!(fig1, "daily per million")
-
-    ta = my_diff(get_county_pc(county, state, :us_confirmed, df))
-    fig2 = plot_helper(ta)
-    title!(fig2, county * ", " * state * ", confirmed cases", titlelocation=:left, top_margin=[5mm 0mm])
-    ylabel!(fig2, "daily per million")
-
-    plot(fig1, fig2, size=(900, 300), layout=2)
+    return make_daily_plot(
+        get_county_pc(county, state, :us_deaths, df),
+        get_county_pc(county, state, :us_confirmed, df),
+        county * ", " * state
+    )
 end 
 
 
 function plot_state_pc_daily(state, df)
-    ta = my_diff(get_state_pc(state, :us_deaths, df))
-    fig1 = plot_helper(ta)
-    title!(fig1, state * ", deaths", titlelocation=:left, top_margin=[5mm 0mm])
-    ylabel!(fig1, "daily per million")
-
-    ta = my_diff(get_state_pc(state, :us_confirmed, df))
-    fig2 = plot_helper(ta)
-    title!(fig2, state * ", confirmed cases", titlelocation=:left, top_margin=[5mm 0mm])
-    ylabel!(fig2, "daily per million")
-
-    plot(fig1, fig2, size=(900, 300), layout=2)
+    return make_daily_plot(
+        get_state_pc(state, :us_deaths, df),
+        get_state_pc(state, :us_confirmed, df),
+        state
+    )
 end 
