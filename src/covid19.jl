@@ -6,6 +6,9 @@ using Statistics
 using JSON
 import HTTP
 using Plots, Plots.Measures
+using LaTeXStrings
+
+pyplot()
 
 const _DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
 ## John Hopkins database
@@ -112,11 +115,11 @@ function plot_helper(ta)
     plot!(fig, ta_ma, color=:black, linewidth=2, legend=false)
     ticks = Date(2020, 03, 1):Month(1):Date(now())
     labels = monthabbr.(ticks)
-    labels[1] = labels[1] * "\n2020"
-    xticks!(fig, Dates.value.(ticks), labels)
+    labels[1] = labels[1] * "\\ 2020 "
+    xticks!(fig, Dates.value.(ticks), latexstring.(labels))
     return fig
 end
-
+ 2
 
 my_diff(ts) = max.(diff(ts), 0) ## take first differences and drop negative obs
 
