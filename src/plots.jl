@@ -48,13 +48,17 @@ plot_country_pc_daily("Cuba", df)
 
 # ### Europe
 
+plot_country_pc_daily("United Kingdom", df)
+#-
+plot_country_pc_daily("Greece", df)
+#-
 plot_country_pc_daily("Spain", df)
 #-
 plot_country_pc_daily("Italy", df)
 #-
 plot_country_pc_daily("Germany", df)
 #-
-plot_country_pc_daily("United Kingdom", df)
+plot_country_pc_daily("France", df)
 #-
 plot_country_pc_daily("Norway", df)
 #-
