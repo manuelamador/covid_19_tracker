@@ -1,3 +1,5 @@
+#src This file is to be read with Literate.jl by "scripts/make.jl" and generates the jupyter notebook with the plots. 
+
 # # Covid-19 tracker
 
 # Updated on DATEOFTODAY
@@ -6,7 +8,7 @@
 
 # ## Code
 
-include("covid19.jl")
+include(joinpath(dirname(@__FILE__), "..", "src", "covid19.jl"));
 
 # ## Getting the get_data
 
