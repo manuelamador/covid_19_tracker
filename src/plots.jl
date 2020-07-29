@@ -12,7 +12,7 @@ include(joinpath(dirname(@__FILE__), "..", "src", "covid19.jl"));
 
 # ## Getting the get_data
 
-df = download_data();
+df = download_covid_data();
 
 # ## US County/State plots
 

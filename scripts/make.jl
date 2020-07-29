@@ -7,8 +7,8 @@
 using Dates
 using Literate
 
-PATH_SRC =  joinpath(dirname(@__FILE__), "..", "src")
-PATH_OUTPUT =  joinpath(dirname(@__FILE__), "..", "output")
+const PATH_SRC =  joinpath(dirname(@__FILE__), "..", "src")
+const PATH_OUTPUT =  joinpath(dirname(@__FILE__), "..", "output")
 
 function replace_date(content)
     content = replace(content, "DATEOFTODAY" => Date(now()))

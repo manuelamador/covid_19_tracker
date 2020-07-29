@@ -10,9 +10,21 @@ using LaTeXStrings
 
 pyplot()
 
+
+const PATH_DATA =  joinpath(dirname(@__FILE__), "..", "data")
+
 const _DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
+
 ## John Hopkins database
 const url_header = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
+
+
+mutable struct Data 
+    iso::Dict{String, String}
+    pop::Dict{String, Union{Nothing,Int64}}
+end 
+
+DATA  = Data(Dict{String, String}(), Dict{String, Union{Nothing,Int64}}())
 
 _WB_ISO2_CODES = Dict(
     "Korea, South" => "KR",
@@ -23,7 +35,7 @@ _WB_ISO2_CODES = Dict(
 list_countries(df) = sort(collect(Set(df["global_confirmed"][!, "Country/Region"])))
 
 
-function download_data()
+function download_covid_data()
     df = (
       global_confirmed = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_global.csv").body)),
       global_deaths = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_global.csv").body)),
@@ -34,12 +46,56 @@ function download_data()
 end
 
 
-function get_iso2(str)
-    ## getting ISO2 code from the worldbank
+function update_pop_file()
+    @info "Updating Population data"
+    url = "http://api.worldbank.org/v2/countries/all/indicator/SP.POP.TOTL?date=2019&per_page=25000&format=json"
+    request = HTTP.get(url)
+    open(joinpath(PATH_DATA, "pop.json"), write=true) do f
+        write(f, String(request.body))
+    end
+end 
+
+
+function read_pop(;dat=DATA)
+    !isfile(joinpath(PATH_DATA, "pop.json")) && update_pop_file()
+    body = open(joinpath(PATH_DATA, "pop.json")) do f
+        read(f, String)
+    end
+    out = JSON.parse(body)[2]
+    dat.pop = Dict(x["country"]["id"] => x["value"] for x in out) 
+end
+
+
+function get_pop(code_iso2; dat=DATA)
+    isempty(dat.pop) && read_pop(dat=dat)
+    ## getting country's population from the worldbank
+    return dat.pop[code_iso2]
+end 
+
+
+function update_iso2_file()
+    @info "Updating ISO2 data"
     url = "http://api.worldbank.org/v2/countries/all?per_page=25000&format=json"
     request = HTTP.get(url)
-    out = JSON.parse(String(request.body))
-    matches = [(x["iso2Code"], x["name"]) for x in out[2] if occursin(str, x["name"])]
+    open(joinpath(PATH_DATA, "iso2.json"), write=true) do f
+        write(f, String(request.body))
+    end
+end 
+
+
+function read_iso2(;dat=DATA)
+    !isfile(joinpath(PATH_DATA, "iso2.json")) && update_iso2_file()
+    body = open(joinpath(PATH_DATA, "iso2.json")) do f
+        read(f, String)
+    end
+    out = JSON.parse(body)[2]
+    dat.iso = Dict(x["name"] => x["iso2Code"] for x in out)
+end
+
+
+function get_iso2(str; dat=DATA)
+    isempty(dat.iso) && read_iso2(dat=dat)
+    matches = [(v, k) for (k, v) in dat.iso if occursin(str, k)]
     if length(matches) == 1
         return matches[1][1]
     elseif isempty(matches)
@@ -51,17 +107,8 @@ function get_iso2(str)
 end
 
 
-function get_pop(code_iso2; year=2019)
-    ## getting country's population from the worldbank
-    url = "http://api.worldbank.org/v2/country/" * code_iso2 * "/indicator/SP.POP.TOTL?date=" * string(year) * "&format=json"
-    request = HTTP.get(url)
-    out = JSON.parse(String(request.body))
-    return out[2][1]["value"]
-end 
-
-
 function to_TimeArray(df; init_date=Date(2020, 3, 1))
-    return stack(df, names(df), variable_name=:date, variable_eltype=String) |>  ## tranpose the dataset -- make columns (dates) into rows
+    return stack(df, names(df), variable_name=:date, variable_eltype=String) |>  ## transpose the dataset -- make columns (dates) into rows
         x -> select!(x, :date => ByRow(x -> Date(x, "mm/dd/yy") + Dates.Year(2000)) => :date, :value) |>  ## convert and fix the dates
         x -> TimeArray(x, timestamp=:date) |> ## convert to time array
         x -> x[init_date:Day(1):Date(2030,1,1)] ## select after March 2020
@@ -119,7 +166,7 @@ function plot_helper(ta)
     xticks!(fig, Dates.value.(ticks), latexstring.(labels))
     return fig
 end
- 2
+
 
 my_diff(ts) = max.(diff(ts), 0) ## take first differences and drop negative obs
 
