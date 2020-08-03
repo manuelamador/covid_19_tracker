@@ -8,7 +8,7 @@
 
 # ## Code
 
-include(joinpath(dirname(@__FILE__), "..", "src", "covid19.jl"));
+include(joinpath(dirname(@__FILE__), "..", "src", "covid_19_tracker.jl"));
 
 # ## Getting the get_data
 
