@@ -1,15 +1,18 @@
-using CSV
-using DataFrames
-using TimeSeries
-using Dates
-using Statistics
-using JSON
-import HTTP
+module CovidTracker 
+
+using DataFrames: names, mapcols, DataFrame!, stack, ByRow, select!
+using TimeSeries: moving, lead, TimeArray
+using Dates: Dates, Day, Month, Year, Date, now, monthabbr
+using Statistics: mean
 using Plots, Plots.Measures
 using LaTeXStrings
+import JSON
+import HTTP
+import CSV
+
+export download_covid_data, plot_country_pc_daily, plot_state_pc_daily, plot_county_pc_daily, list_countries
 
 pyplot()
-
 
 const PATH_DATA =  joinpath(dirname(@__FILE__), "..", "data")
 
@@ -209,3 +212,5 @@ function plot_state_pc_daily(state, df)
         state
     )
 end 
+
+end

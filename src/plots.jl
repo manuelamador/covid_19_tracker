@@ -4,11 +4,11 @@
 
 # Updated on DATEOFTODAY
 # 
-# Written in Julia 1.4 
 
 # ## Code
 
-include(joinpath(dirname(@__FILE__), "..", "src", "covid_19_tracker.jl"));
+include(joinpath(dirname(@__FILE__), "..", "src", "CovidTracker.jl"));
+using .CovidTracker
 
 # ## Getting the get_data
 
