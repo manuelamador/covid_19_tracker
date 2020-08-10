@@ -1,4 +1,4 @@
-name = "covid_19_tracker"
+name = "CovidTracker"
 uuid = "07ef7472-392e-4bc7-8d68-558888b5c3a9"
 authors = ["Manuel Amador <amador.manuel@gmail.com>"]
 version = "0.1.0"
