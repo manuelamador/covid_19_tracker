@@ -12,8 +12,6 @@ import CSV
 
 export download_covid_data, plot_country_pc_daily, plot_state_pc_daily, plot_county_pc_daily, list_countries
 
-pyplot()
-
 const PATH_DATA =  joinpath(dirname(@__FILE__), "..", "data")
 
 const _DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
@@ -159,19 +157,21 @@ function get_country_pc(country, series, df)
 end
 
 
+my_diff(ts) = max.(diff(ts), 0) ## take first differences and drop negative obs
+
+
+# Plotting 
+
 function plot_helper(ta)
     fig = plot(ta, ribbon=(0.0 .* values(ta), -values(ta)), linewidth=2, legend=false)
     ta_ma = lead(moving(mean, ta, 7), 3) ## centered moving average 
     plot!(fig, ta_ma, color=:black, linewidth=2, legend=false)
     ticks = Date(2020, 03, 1):Month(1):Date(now())
     labels = monthabbr.(ticks)
-    labels[1] = labels[1] * "\\ 2020 "
-    xticks!(fig, Dates.value.(ticks), latexstring.(labels))
+    labels[1] = labels[1] * "\n 2020 "
+    xticks!(fig, Dates.value.(ticks), (labels))
     return fig
 end
-
-
-my_diff(ts) = max.(diff(ts), 0) ## take first differences and drop negative obs
 
 
 function make_daily_plot(ts_deaths, ts_confirmed, title)
