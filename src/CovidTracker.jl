@@ -5,7 +5,6 @@ using TimeSeries: moving, lead, TimeArray
 using Dates: Dates, Day, Month, Year, Date, now, monthabbr
 using Statistics: mean
 using Plots, Plots.Measures
-using LaTeXStrings
 import JSON
 import HTTP
 import CSV
