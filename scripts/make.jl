@@ -22,8 +22,13 @@ end
 #     return str
 # end
 
+_STORE_ENV = haskey(ENV, "GKSWSTYPE") ? ENV["GKSWSTYPE"] : ""
+ENV["GKSwstype"]="nul"
+
 Literate.notebook(
     joinpath(PATH_SRC, "plots.jl"), 
     joinpath(PATH_OUTPUT);
     preprocess= replace_date 
 )
+
+_STORE_ENV=="" ? delete!(ENV, "GKSWSTYPE") : ENV["GKSWSTYPE"] = _STORE_ENV;
