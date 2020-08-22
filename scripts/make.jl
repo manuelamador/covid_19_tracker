@@ -31,4 +31,6 @@ Literate.notebook(
     preprocess= replace_date 
 )
 
-_STORE_ENV=="" ? delete!(ENV, "GKSWSTYPE") : ENV["GKSWSTYPE"] = _STORE_ENV;
+_STORE_ENV=="" ? delete!(ENV, "GKSWSTYPE") : ENV["GKSWSTYPE"] = _STORE_ENV
+
+;
