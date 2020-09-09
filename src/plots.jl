@@ -62,6 +62,8 @@ plot_country_pc_daily("Germany", df)
 #-
 plot_country_pc_daily("France", df)
 #-
+plot_country_pc_daily("Switzerland", df)
+#-
 plot_country_pc_daily("Norway", df)
 #-
 plot_country_pc_daily("Denmark", df)
