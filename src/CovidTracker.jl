@@ -173,7 +173,7 @@ function plot_helper(ta)
 end
 
 
-function make_daily_plot(ts_deaths, ts_confirmed, title)
+function make_daily_plot(ts_deaths, ts_confirmed, title; plotsize=(900, 300))
     fig1 = plot_helper(my_diff(ts_deaths))
     title!(fig1, title * ", deaths", titlelocation=:left, top_margin=[5mm 0mm])
     ylabel!(fig1, "daily per million")
@@ -182,33 +182,36 @@ function make_daily_plot(ts_deaths, ts_confirmed, title)
     title!(fig2, title * ", confirmed cases", titlelocation=:left, top_margin=[5mm 0mm])
     ylabel!(fig2, "daily per million")
 
-    return plot(fig1, fig2, size=(900, 300), layout=2)
+    return plot(fig1, fig2, size=plotsize, layout=2)
 end 
 
 
-function plot_country_pc_daily(country, df)
+function plot_country_pc_daily(country, df; plotsize=(900, 300))
     return make_daily_plot(
         get_country_pc(country, :global_deaths, df),
         get_country_pc(country, :global_confirmed, df),
-        country
+        country,
+        plotsize=plotsize
     )
 end 
 
 
-function plot_county_pc_daily(county, state, df)
+function plot_county_pc_daily(county, state, df; plotsize=(900, 300))
     return make_daily_plot(
         get_county_pc(county, state, :us_deaths, df),
         get_county_pc(county, state, :us_confirmed, df),
-        county * ", " * state
+        county * ", " * state,
+        plotsize=plotsize
     )
 end 
 
 
-function plot_state_pc_daily(state, df)
+function plot_state_pc_daily(state, df; plotsize=(900, 300))
     return make_daily_plot(
         get_state_pc(state, :us_deaths, df),
         get_state_pc(state, :us_confirmed, df),
-        state
+        state,
+        plotsize=plotsize
     )
 end 
 
