@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.11.14
+# v0.12.0
 
 using Markdown
 using InteractiveUtils
@@ -9,6 +9,13 @@ begin
 	_BASE_DIR = joinpath(@__DIR__, "..")
 	push!(LOAD_PATH, joinpath(_BASE_DIR, ".."))
 	using CovidTracker
+end
+
+# ╔═╡ 4919d9ae-08a7-11eb-0175-0fe71b8db012
+begin 
+	using FredData
+	using Plots
+	using DataFrames
 end
 
 # ╔═╡ e99694a6-fd0a-11ea-2dd9-179b70451bf0
@@ -143,8 +150,63 @@ plot_country_pc_daily("Vietnam", df, plotsize=_SIZE)
 # ╔═╡ 7fdf96ba-fd06-11ea-3fb6-df0b108ade92
 plot_country_pc_daily("Japan", df, plotsize=_SIZE)
 
+# ╔═╡ 3c9587d2-08a7-11eb-34d0-a97c022d29a6
+md"## A Comparison between Nordic Countries"
+
+# ╔═╡ 5d54884c-08a7-11eb-1b86-cd66c1940655
+# make sure you have your API key access set up 
+# https://github.com/micahjsmith/FredData.jl
+f = Fred();
+
+# ╔═╡ 40e7dba4-08a8-11eb-364d-4d7c0310a4b3
+begin 
+	# Quarterly real GDP at 2010 constant prices
+	sweden_gdp = get_data(f, "CLVMNACSCAB1GQSE")
+	denmark_gdp = get_data(f, "CLVMNACSCAB1GQDK")
+	norway_gdp = get_data(f, "CLVMNACSCAB1GQNO")
+	finland_gdp = get_data(f, "CLVMNACSCAB1GQFI")
+end;
+
+# ╔═╡ c98d92c2-08b8-11eb-0842-5578c71efe60
+md"By not locking down, Sweden saved around 2% of GDP with respect to its neighbors in 2020 Q1."
+
+# ╔═╡ c3d0de5c-08ac-11eb-0a9e-13359b572b4d
+# NOTE: norway quarterly GDP data may be off by a month
+
+# ╔═╡ 15d357d6-08ad-11eb-05a0-259aa2e3f4aa
+md"### Cost of life calculation"
+
+# ╔═╡ f24f317e-08b4-11eb-2634-79df3eef4594
+md"Sweden avoided the GDP drop of its neighbors in 2020Q1."
+
+# ╔═╡ ac726ca8-08b1-11eb-0ec8-2fd4abefa117
+md"What if Sweden had the death rate of Norway, but GDP will have fallen as much as in Norway in the 2020Q2.? What's the GDP gain per unit of life?"
+
 # ╔═╡ 41e3c9b2-fd0b-11ea-22d4-d57677701e55
 md"## Auxiliary functions"
+
+# ╔═╡ 0a5d266a-08ae-11eb-0095-6fbbd3faeff3
+function total_deaths(country)
+	DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
+	return filter(x-> x["Country/Region"] === country, df[:global_deaths]) |>
+        x -> x[!, DATE_STR] |>
+        x -> mapcols(sum ∘ skipmissing, x) |>
+		x -> x[end][1]
+end 
+
+# ╔═╡ 9873e1d2-08ae-11eb-0bca-0fb57197e13f
+begin 
+	death_rate_NOR = total_deaths("Norway") / get_pop("NO")
+	death_rate_SWE = total_deaths("Sweden") / get_pop("SE")
+end;
+
+# ╔═╡ 50dc4974-08b1-11eb-3260-dde8a11c4678
+# https://stackoverflow.com/questions/52213829/in-julia-insert-commas-into-integers-for-printing-like-python-3-6
+
+function commas(num::Integer)
+    str = string(num)
+    return replace(str, r"(?<=[0-9])(?=(?:[0-9]{3})+(?![0-9]))" => ",")
+end
 
 # ╔═╡ 60fd65f2-fd0a-11ea-1dd8-0b4c9df11b4d
 function with_terminal(f)
@@ -182,8 +244,78 @@ begin
 	import Dates
 	with_terminal() do 
 		println("Today's date: ", Dates.Date(Dates.now()))
+		println("Database last date: ", names(df.us_confirmed)[end])
 	end
 end
+
+# ╔═╡ 5d830c60-08a9-11eb-1c11-2f4fcf135386
+function normalize(series; date=Dates.Date(2019,10, 1))
+	idx = findfirst(x -> x >= date, series.data["date"]) 
+	series.data["value"] / series.data["value"][idx]
+end
+
+# ╔═╡ 0cf38670-08af-11eb-1ef8-fda375e5304c
+begin
+	# annual GDP for Sweden in current USD 
+	annual_GDP_SWE_USD = get_data(f, "MKTGDPSEA646NWDB").data["value"][end]
+	
+	# quarterly value
+	quarterly_GDP_SWE_USD = annual_GDP_SWE_USD / 4
+	
+	# counter_factual_deaths if Sweden had Norway mortality rate
+	counter_factual_deaths_saved_SWE = get_pop("SE") * 
+		(death_rate_SWE - death_rate_NOR)
+	
+	idx_NOR = findfirst(
+		x -> x >= Dates.Date(2020,01,01), 
+		norway_gdp.data["date"]
+	) 
+	idx_SWE = findfirst(
+		x -> x >= Dates.Date(2020,01,01), 
+		sweden_gdp.data["date"]
+	) 
+	
+	# counter factual GDP loss if Sweden GDP would have fallen in 2020 Q2 by the same
+	# amount as Norway
+	counter_factual_gdp_loss_SWE_USD = quarterly_GDP_SWE_USD *
+		(1 - normalize(norway_gdp)[idx_NOR] / normalize(sweden_gdp)[idx_SWE])
+end;
+
+# ╔═╡ 41b74b08-08b4-11eb-0069-69546f2febf3
+value_of_life = counter_factual_gdp_loss_SWE_USD / counter_factual_deaths_saved_SWE
+
+# ╔═╡ 58700016-08b0-11eb-1f79-1901b921f93e
+md"The counter factual value of life is **USD $(commas(convert(Int64, round(value_of_life))))**. "
+
+# ╔═╡ 37f42c3c-08ab-11eb-337c-a9bba0941e3b
+function normalized_gdp_plots(; range=20, legendpos=:bottom) 
+	fig = plot(
+		sweden_gdp.data["date"][end-range:end], 
+		log.(normalize(sweden_gdp)[end-range:end]), 
+		label="SWE", lw=2, marker=:auto, 
+		legend=legendpos,
+		title="Log Quarterly Real GDP, SA\n2019Q4 = 0",
+		format="png")
+	plot!(fig, 
+		denmark_gdp.data["date"][end-range:end], 
+		log.(normalize(denmark_gdp)[end-range:end]), 
+		label="DNK", lw=2, marker=:auto)
+	plot!(fig, 
+		norway_gdp.data["date"][end-range:end], 
+		log.(normalize(norway_gdp)[end-range:end]), 
+		label="NOR", lw=2, marker=:auto)
+	plot!(fig, 
+		finland_gdp.data["date"][end-range:end], 
+		log.(normalize(finland_gdp)[end-range:end]), 
+		label="FIN", lw=2, marker=:auto)
+	return fig
+end
+
+# ╔═╡ 7b14ee66-08a8-11eb-0abf-1bbf90781838
+normalized_gdp_plots(range=20)
+
+# ╔═╡ d770e20c-08ab-11eb-2aa9-3f699d5d3439
+normalized_gdp_plots(range=4)
 
 # ╔═╡ Cell order:
 # ╟─0f9ceab2-fd09-11ea-32d8-c1304a7f9376
@@ -231,6 +363,25 @@ end
 # ╟─7fcfadca-fd06-11ea-0dd1-d3cd0c1d072b
 # ╟─7fd7647c-fd06-11ea-0885-271cca42df16
 # ╟─7fdf96ba-fd06-11ea-3fb6-df0b108ade92
+# ╟─3c9587d2-08a7-11eb-34d0-a97c022d29a6
+# ╠═4919d9ae-08a7-11eb-0175-0fe71b8db012
+# ╠═5d54884c-08a7-11eb-1b86-cd66c1940655
+# ╠═40e7dba4-08a8-11eb-364d-4d7c0310a4b3
+# ╠═7b14ee66-08a8-11eb-0abf-1bbf90781838
+# ╠═d770e20c-08ab-11eb-2aa9-3f699d5d3439
+# ╟─c98d92c2-08b8-11eb-0842-5578c71efe60
+# ╠═c3d0de5c-08ac-11eb-0a9e-13359b572b4d
+# ╟─15d357d6-08ad-11eb-05a0-259aa2e3f4aa
+# ╟─f24f317e-08b4-11eb-2634-79df3eef4594
+# ╟─ac726ca8-08b1-11eb-0ec8-2fd4abefa117
+# ╠═9873e1d2-08ae-11eb-0bca-0fb57197e13f
+# ╠═0cf38670-08af-11eb-1ef8-fda375e5304c
+# ╠═41b74b08-08b4-11eb-0069-69546f2febf3
+# ╟─58700016-08b0-11eb-1f79-1901b921f93e
 # ╟─41e3c9b2-fd0b-11ea-22d4-d57677701e55
 # ╠═e99694a6-fd0a-11ea-2dd9-179b70451bf0
+# ╠═5d830c60-08a9-11eb-1c11-2f4fcf135386
+# ╠═37f42c3c-08ab-11eb-337c-a9bba0941e3b
+# ╠═0a5d266a-08ae-11eb-0095-6fbbd3faeff3
+# ╠═50dc4974-08b1-11eb-3260-dde8a11c4678
 # ╠═60fd65f2-fd0a-11ea-1dd8-0b4c9df11b4d

@@ -9,7 +9,7 @@ import JSON
 import HTTP
 import CSV
 
-export download_covid_data, plot_country_pc_daily, plot_state_pc_daily, plot_county_pc_daily, list_countries
+export download_covid_data, plot_country_pc_daily, plot_state_pc_daily, plot_county_pc_daily, list_countries, get_pop
 
 const PATH_DATA =  joinpath(dirname(@__FILE__), "..", "data")
 
