@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.0
+# v0.12.2
 
 using Markdown
 using InteractiveUtils
@@ -180,7 +180,7 @@ md"### Cost of life calculation"
 md"Sweden avoided the GDP drop of its neighbors in 2020Q1."
 
 # ╔═╡ ac726ca8-08b1-11eb-0ec8-2fd4abefa117
-md"What if Sweden had the death rate of Norway, but GDP will have fallen as much as in Norway in the 2020Q2.? What's the GDP gain per unit of life?"
+md"What if Sweden had the death rate of Norway, but GDP will have fallen as much as in Norway in the 2020Q2.? What's the GDP gain per unit of life lost?"
 
 # ╔═╡ 41e3c9b2-fd0b-11ea-22d4-d57677701e55
 md"## Auxiliary functions"
@@ -294,8 +294,7 @@ function normalized_gdp_plots(; range=20, legendpos=:bottom)
 		log.(normalize(sweden_gdp)[end-range:end]), 
 		label="SWE", lw=2, marker=:auto, 
 		legend=legendpos,
-		title="Log Quarterly Real GDP, SA\n2019Q4 = 0",
-		format="png")
+		title="Log Quarterly Real GDP, SA\n2019Q4 = 0")
 	plot!(fig, 
 		denmark_gdp.data["date"][end-range:end], 
 		log.(normalize(denmark_gdp)[end-range:end]), 
