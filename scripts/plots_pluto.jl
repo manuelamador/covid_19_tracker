@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.2
+# v0.12.4
 
 using Markdown
 using InteractiveUtils
@@ -294,7 +294,8 @@ function normalized_gdp_plots(; range=20, legendpos=:bottom)
 		log.(normalize(sweden_gdp)[end-range:end]), 
 		label="SWE", lw=2, marker=:auto, 
 		legend=legendpos,
-		title="Log Quarterly Real GDP, SA\n2019Q4 = 0")
+		title="Log Quarterly Real GDP, SA\n2019Q4 = 0",
+		format="png")
 	plot!(fig, 
 		denmark_gdp.data["date"][end-range:end], 
 		log.(normalize(denmark_gdp)[end-range:end]), 
