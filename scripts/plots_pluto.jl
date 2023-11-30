@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.19.22
 
 using Markdown
 using InteractiveUtils
@@ -8,6 +8,10 @@ using InteractiveUtils
 begin 
 	_BASE_DIR = joinpath(@__DIR__, "..")
 	push!(LOAD_PATH, joinpath(_BASE_DIR, ".."))
+	
+	import Pkg
+	Pkg.activate(_BASE_DIR)
+	using Revise
 	using CovidTracker
 end
 
@@ -156,7 +160,7 @@ md"## A Comparison between Nordic Countries"
 # ╔═╡ 5d54884c-08a7-11eb-1b86-cd66c1940655
 # make sure you have your API key access set up 
 # https://github.com/micahjsmith/FredData.jl
-f = Fred();
+f = Fred("bc6be254870cc706d3b8e0a106861107");
 
 # ╔═╡ 40e7dba4-08a8-11eb-364d-4d7c0310a4b3
 begin 
@@ -167,9 +171,6 @@ begin
 	finland_gdp = get_data(f, "CLVMNACSCAB1GQFI")
 end;
 
-# ╔═╡ c98d92c2-08b8-11eb-0842-5578c71efe60
-md"By not locking down, Sweden saved around 2% of GDP with respect to its neighbors in 2020 Q1."
-
 # ╔═╡ c3d0de5c-08ac-11eb-0a9e-13359b572b4d
 # NOTE: norway quarterly GDP data may be off by a month
 
@@ -177,7 +178,7 @@ md"By not locking down, Sweden saved around 2% of GDP with respect to its neighb
 md"### Cost of life calculation"
 
 # ╔═╡ f24f317e-08b4-11eb-2634-79df3eef4594
-md"Sweden avoided the GDP drop of its neighbors in 2020Q1."
+md"Sweden avoided the GDP drop of its neighbors in 2020Q1. (<- This is no longer true)"
 
 # ╔═╡ ac726ca8-08b1-11eb-0ec8-2fd4abefa117
 md"What if Sweden had the death rate of Norway, but GDP will have fallen as much as in Norway in the 2020Q2.? What's the GDP gain per unit of life lost?"
@@ -191,7 +192,7 @@ function total_deaths(country)
 	return filter(x-> x["Country/Region"] === country, df[:global_deaths]) |>
         x -> x[!, DATE_STR] |>
         x -> mapcols(sum ∘ skipmissing, x) |>
-		x -> x[end][1]
+		x -> x[!, end][1]
 end 
 
 # ╔═╡ 9873e1d2-08ae-11eb-0bca-0fb57197e13f
@@ -250,14 +251,14 @@ end
 
 # ╔═╡ 5d830c60-08a9-11eb-1c11-2f4fcf135386
 function normalize(series; date=Dates.Date(2019,10, 1))
-	idx = findfirst(x -> x >= date, series.data["date"]) 
-	series.data["value"] / series.data["value"][idx]
+	idx = findfirst(x -> x >= date, series.data[!, "date"]) 
+	series.data[!, "value"] / series.data[!, "value"][idx]
 end
 
 # ╔═╡ 0cf38670-08af-11eb-1ef8-fda375e5304c
 begin
 	# annual GDP for Sweden in current USD 
-	annual_GDP_SWE_USD = get_data(f, "MKTGDPSEA646NWDB").data["value"][end]
+	annual_GDP_SWE_USD = get_data(f, "MKTGDPSEA646NWDB").data[!, "value"][end]
 	
 	# quarterly value
 	quarterly_GDP_SWE_USD = annual_GDP_SWE_USD / 4
@@ -268,11 +269,11 @@ begin
 	
 	idx_NOR = findfirst(
 		x -> x >= Dates.Date(2020,01,01), 
-		norway_gdp.data["date"]
+		norway_gdp.data[!, "date"]
 	) 
 	idx_SWE = findfirst(
 		x -> x >= Dates.Date(2020,01,01), 
-		sweden_gdp.data["date"]
+		sweden_gdp.data[!, "date"]
 	) 
 	
 	# counter factual GDP loss if Sweden GDP would have fallen in 2020 Q2 by the same
@@ -288,34 +289,34 @@ value_of_life = counter_factual_gdp_loss_SWE_USD / counter_factual_deaths_saved_
 md"The counter factual value of life is **USD $(commas(convert(Int64, round(value_of_life))))**. "
 
 # ╔═╡ 37f42c3c-08ab-11eb-337c-a9bba0941e3b
-function normalized_gdp_plots(; range=20, legendpos=:bottom) 
+function normalized_gdp_plots(; start_from = 30, end_from = 0, legendpos=:bottom)
 	fig = plot(
-		sweden_gdp.data["date"][end-range:end], 
-		log.(normalize(sweden_gdp)[end-range:end]), 
+		sweden_gdp.data[!, "date"][end-start_from:end-end_from], 
+		log.(normalize(sweden_gdp)[end-start_from:end-end_from]), 
 		label="SWE", lw=2, marker=:auto, 
 		legend=legendpos,
 		title="Log Quarterly Real GDP, SA\n2019Q4 = 0",
 		format="png")
 	plot!(fig, 
-		denmark_gdp.data["date"][end-range:end], 
-		log.(normalize(denmark_gdp)[end-range:end]), 
+		denmark_gdp.data[!, "date"][end-start_from:end-end_from], 
+		log.(normalize(denmark_gdp)[end-start_from:end-end_from]), 
 		label="DNK", lw=2, marker=:auto)
 	plot!(fig, 
-		norway_gdp.data["date"][end-range:end], 
-		log.(normalize(norway_gdp)[end-range:end]), 
+		norway_gdp.data[!, "date"][end-start_from:end-end_from], 
+		log.(normalize(norway_gdp)[end-start_from:end-end_from]), 
 		label="NOR", lw=2, marker=:auto)
 	plot!(fig, 
-		finland_gdp.data["date"][end-range:end], 
-		log.(normalize(finland_gdp)[end-range:end]), 
+		finland_gdp.data[!, "date"][end-start_from:end-end_from], 
+		log.(normalize(finland_gdp)[end-start_from:end-end_from]), 
 		label="FIN", lw=2, marker=:auto)
 	return fig
 end
 
 # ╔═╡ 7b14ee66-08a8-11eb-0abf-1bbf90781838
-normalized_gdp_plots(range=20)
+normalized_gdp_plots()
 
-# ╔═╡ d770e20c-08ab-11eb-2aa9-3f699d5d3439
-normalized_gdp_plots(range=4)
+# ╔═╡ e3dcc759-ab5a-4297-9897-8f200cf3896a
+normalized_gdp_plots(start_from=11, end_from= 5)
 
 # ╔═╡ Cell order:
 # ╟─0f9ceab2-fd09-11ea-32d8-c1304a7f9376
@@ -368,11 +369,10 @@ normalized_gdp_plots(range=4)
 # ╠═5d54884c-08a7-11eb-1b86-cd66c1940655
 # ╠═40e7dba4-08a8-11eb-364d-4d7c0310a4b3
 # ╠═7b14ee66-08a8-11eb-0abf-1bbf90781838
-# ╠═d770e20c-08ab-11eb-2aa9-3f699d5d3439
-# ╟─c98d92c2-08b8-11eb-0842-5578c71efe60
+# ╠═e3dcc759-ab5a-4297-9897-8f200cf3896a
 # ╠═c3d0de5c-08ac-11eb-0a9e-13359b572b4d
 # ╟─15d357d6-08ad-11eb-05a0-259aa2e3f4aa
-# ╟─f24f317e-08b4-11eb-2634-79df3eef4594
+# ╠═f24f317e-08b4-11eb-2634-79df3eef4594
 # ╟─ac726ca8-08b1-11eb-0ec8-2fd4abefa117
 # ╠═9873e1d2-08ae-11eb-0bca-0fb57197e13f
 # ╠═0cf38670-08af-11eb-1ef8-fda375e5304c

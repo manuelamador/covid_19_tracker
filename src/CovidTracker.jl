@@ -1,6 +1,6 @@
 module CovidTracker 
 
-using DataFrames: names, mapcols, DataFrame!, stack, ByRow, select!
+using DataFrames: names, mapcols, DataFrame, stack, ByRow, select!
 using TimeSeries: moving, lead, TimeArray
 using Dates: Dates, Day, Month, Year, Date, now, monthabbr
 using Statistics: mean
@@ -17,7 +17,6 @@ const _DATE_STR = r"^\d{1,2}\/\d{1,2}\/\d{2}$"
 
 ## John Hopkins database
 const url_header = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
-
 
 mutable struct Data 
     iso::Dict{String, String}
@@ -37,10 +36,10 @@ list_countries(df) = sort(collect(Set(df["global_confirmed"][!, "Country/Region"
 
 function download_covid_data()
     df = (
-      global_confirmed = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_global.csv").body)),
-      global_deaths = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_global.csv").body)),
-      us_deaths = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_US.csv").body)),
-      us_confirmed = DataFrame!(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_US.csv").body))
+      global_confirmed = DataFrame(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_global.csv").body)),
+      global_deaths = DataFrame(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_global.csv").body)),
+      us_deaths = DataFrame(CSV.File(HTTP.get(url_header * "time_series_covid19_deaths_US.csv").body)),
+      us_confirmed = DataFrame(CSV.File(HTTP.get(url_header * "time_series_covid19_confirmed_US.csv").body))
     )
     return df
 end
@@ -124,24 +123,24 @@ end
 
 get_counties_pop(f,  df) = filter(f, df[:us_deaths])[!, :Population] |> sum ∘ skipmissing 
 
-get_county(county, state, series, df) =  get_counties(x-> (x["Province_State"] === state) & (x["Admin2"] === county), series, df)
+get_county(county, state, series, df) =  get_counties(x-> (x["Province_State"] == state) & (x["Admin2"] == county), series, df)
 
-get_state(state, series, df) = get_counties(x-> (x["Province_State"] === state), series, df)
+get_state(state, series, df) = get_counties(x-> (x["Province_State"] == state), series, df)
 
 function get_county_pc(county, state, series, df)
-    f = x -> (x["Province_State"] === state) & (x["Admin2"] === county)
+    f = x -> (x["Province_State"] == state) & (x["Admin2"] == county)
     return get_counties(f, series, df) ./ get_counties_pop(f, df) .* 1_000_000.0
 end 
 
 
 function get_state_pc(state, series, df)
-    f = x -> (x["Province_State"] === state) 
+    f = x -> (x["Province_State"] == state) 
     return get_counties(f, series, df) ./ get_counties_pop(f, df) .* 1_000_000.0
 end 
 
 
 function get_country(country, series, df)
-    return filtered = filter(x-> x["Country/Region"] === country, df[series]) |> ## select country
+    return filtered = filter(x-> x["Country/Region"] == country, df[series]) |> ## select country
         x -> x[!, _DATE_STR] |> ## only columns names that are dates
         x -> mapcols(sum ∘ skipmissing, x) |> ## aggregate across all columns (dates)
         x -> to_TimeArray(x) 
@@ -165,7 +164,7 @@ function plot_helper(ta)
     fig = plot(ta, ribbon=(0.0 .* values(ta), -values(ta)), linewidth=2, legend=false)
     ta_ma = lead(moving(mean, ta, 7), 3) ## centered moving average 
     plot!(fig, ta_ma, color=:black, linewidth=2, legend=false)
-    ticks = Date(2020, 03, 1):Month(1):Date(now())
+    ticks = Date(2020, 03, 1):Year(1):Date(now())
     labels = monthabbr.(ticks)
     labels[1] = labels[1] * "\n 2020 "
     xticks!(fig, Dates.value.(ticks), (labels))
